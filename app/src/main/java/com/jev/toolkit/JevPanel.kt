@@ -175,7 +175,7 @@ class JevPanel(private val context: Context) {
                     val name = className ?: return
                     val detail = members.joinToString("\n").ifEmpty { "No fields or methods" }
                     val entry = column()
-                    val body = TextView(context).apply { text = detail; setTextColor(-1); visibility = View.GONE; setTextIsSelectable(true }
+                    val body = TextView(context).apply { text = detail; setTextColor(-1); visibility = View.GONE; setTextIsSelectable(true) }
                     entry.addView(button(name) { body.visibility = if (body.visibility == View.VISIBLE) View.GONE else View.VISIBLE })
                     entry.addView(body)
                     target.addView(entry)
