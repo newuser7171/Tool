@@ -30,8 +30,8 @@ object MetadataExplorer {
         fun table(at: Int): Table = Table(int(at), int(at + 4))
         val strings = table(24)
         val methods = table(48)
-        val fields = table(88)
-        val types = table(152)
+        val fields = table(96)
+        val types = table(160)
         if (listOf(strings, methods, fields, types).any { !it.valid(bytes.size) }) {
             return "Invalid metadata table bounds"
         }
@@ -56,10 +56,10 @@ object MetadataExplorer {
                 val base = types.offset + i * stride
                 val name = stringAt(int(base)) ?: return null
                 val ns = stringAt(int(base + 4)) ?: return null
-                val fieldStart = int(base + 44)
-                val methodStart = int(base + 48)
-                val methodCount = b.getShort(base + 76).toInt() and 0xffff
-                val fieldCount = b.getShort(base + 78).toInt() and 0xffff
+                val fieldStart = int(base + 40)
+                val methodStart = int(base + 44)
+                val methodCount = b.getShort(base + 72).toInt() and 0xffff
+                val fieldCount = b.getShort(base + 76).toInt() and 0xffff
                 if (fieldStart < 0 || methodStart < 0 ||
                     fieldStart.toLong() + fieldCount > 10000000L ||
                     methodStart.toLong() + methodCount > 10000000L) return null
