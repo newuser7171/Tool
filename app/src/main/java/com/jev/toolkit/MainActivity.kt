@@ -62,6 +62,11 @@ class MainActivity : Activity() {
                 stopService(Intent(this@MainActivity, FloatingOverlayService::class.java))
             }
         }
+        val testOverlay = Button(this).apply {
+            text = "Test native menu"
+            setOnClickListener { startActivity(Intent(this@MainActivity, OverlayTestActivity::class.java)) }
+        }
+        overlayControls.addView(testOverlay)
         overlayControls.addView(startOverlay)
         overlayControls.addView(stopOverlay)
         root.addView(overlayControls, FrameLayout.LayoutParams(
