@@ -5,7 +5,7 @@ import java.nio.ByteOrder
 
 /**
  * Read-only parser for standard Unity IL2CPP global-metadata.dat files.
- * Supports common v24-v29 layouts using validated record-size detection.
+ * Supports validated IL2CPP v31 type, method and field table layouts.
  * Encrypted/modified metadata and signatures reconstructed from libil2cpp
  * are intentionally not guessed.
  */
@@ -89,10 +89,10 @@ object MetadataExplorer {
                 val base = types.offset + i * stride
                 val name = stringAt(int(base)) ?: return null
                 val ns = stringAt(int(base + 4)) ?: return null
-                val fieldStart = int(base + 56)
+                val fieldStart = int(base + 32)
                 val methodStart = int(base + 36)
-                val methodCount = b.getShort(base + 78).toInt() and 0xffff
-                val fieldCount = b.getShort(base + 74).toInt() and 0xffff
+                val methodCount = b.getShort(base + 64).toInt() and 0xffff
+                val fieldCount = b.getShort(base + 68).toInt() and 0xffff
                 if (fieldStart < -1 || methodStart < -1 ||
                     (fieldStart == -1 && fieldCount != 0) ||
                     (methodStart == -1 && methodCount != 0) ||
@@ -103,12 +103,10 @@ object MetadataExplorer {
             }
             return if (validNames >= n / 2) result else null
         }
-        val layouts = (88..128 step 4).flatMap { typeStride ->
-            listOf(36, 32, 28, 40, 44, 48, 52, 56).flatMap { methodStride ->
-                listOf(12, 16, 20, 24).map { fieldStride ->
-                    Layout(typeStride, methodStride, fieldStride)
-                }
-            }
+        val layouts = if (version == 31) {
+            listOf(Layout(88, 36, 12))
+        } else {
+            listOf(Layout(88, 32, 12), Layout(92, 32, 12))
         }
         val selected = layouts.firstNotNullOfOrNull { layout ->
             val ts = readTypes(layout.typeStride) ?: return@firstNotNullOfOrNull null
@@ -118,6 +116,10 @@ object MetadataExplorer {
             val fieldTotal = fields.count(layout.fieldStride)
             if (ts.any { it.methodStart.toLong() + it.methodCount > methodTotal ||
                          it.fieldStart.toLong() + it.fieldCount > fieldTotal }) {
+                return@firstNotNullOfOrNull null
+            }
+            if (version == 31 && (ts.sumOf { it.methodCount.toLong() } != methodTotal.toLong() ||
+                ts.sumOf { it.fieldCount.toLong() } != fieldTotal.toLong())) {
                 return@firstNotNullOfOrNull null
             }
             Pair(layout, ts)
