@@ -16,6 +16,8 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 class MainActivity : Activity() {
+    companion object { const val ACTION_PICK_FOR_OVERLAY = "com.jev.toolkit.PICK_FOR_OVERLAY" }
+    private var pickForOverlay = false
     private val apkPickerRequest = 701
     private lateinit var surface: GLSurfaceView
     private lateinit var root: FrameLayout
@@ -74,7 +76,18 @@ class MainActivity : Activity() {
             Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
         ))
         panel.attach(root) { openApkPicker() }
+        if (intent?.action == ACTION_PICK_FOR_OVERLAY) {
+            pickForOverlay = true
+            root.post { openApkPicker() }
+        }
         setContentView(root)
+    }
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        if (intent?.action == ACTION_PICK_FOR_OVERLAY) {
+            pickForOverlay = true
+            openApkPicker()
+        }
     }
     private fun openApkPicker() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
@@ -88,7 +101,15 @@ class MainActivity : Activity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == apkPickerRequest && resultCode == RESULT_OK) {
             val uri: Uri = data?.data ?: return
-            panel.analyzeApk(uri)
+            if (pickForOverlay) {
+                pickForOverlay = false
+                try { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                catch (_: SecurityException) { }
+                startService(Intent(this, FloatingOverlayService::class.java).apply {
+                    action = FloatingOverlayService.ACTION_ANALYZE
+                    putExtra(FloatingOverlayService.EXTRA_APK, uri.toString())
+                })
+            } else panel.analyzeApk(uri)
         }
     }
     override fun onResume() { super.onResume(); surface.onResume() }
