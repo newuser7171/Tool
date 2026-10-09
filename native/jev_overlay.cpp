@@ -2,6 +2,12 @@
 #include <GLES3/gl3.h>
 #include "imgui.h"
 #include "backends/imgui_impl_opengl3.h"
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <cstring>
+extern "C" size_t jev_inspect_loaded_assemblies(char*, size_t);
+extern "C" size_t jev_explore_loaded_classes(const char*, char*, size_t);
 
 namespace {
 bool ready = false;
@@ -9,6 +15,17 @@ bool open = false;
 int width = 1, height = 1;
 float pointerX = -1, pointerY = -1;
 bool pointerDown = false;
+std::string inspection = "Press Scan to inspect loaded IL2CPP assemblies.";
+char filter[128] = {};
+void runScan(bool classes) {
+    constexpr size_t maxBytes = 65536;
+    std::vector<char> buffer(maxBytes, 0);
+    const size_t needed = classes ? jev_explore_loaded_classes(filter, buffer.data(), buffer.size())
+                                  : jev_inspect_loaded_assemblies(buffer.data(), buffer.size());
+    inspection.assign(buffer.data());
+    if (needed >= maxBytes) inspection += "\\n[Results truncated]";
+}
+
 }
 
 extern "C" bool jev_overlay_init(int w, int h) {
@@ -55,7 +72,13 @@ extern "C" void jev_overlay_frame(float delta_seconds) {
         if (ImGui::Begin("JEV In-Game Toolkit", &open)) {
             ImGui::TextWrapped("Embedded overlay module (read-only host integration).");
             ImGui::Separator();
-            ImGui::TextWrapped("The game must call this module from its GL render loop and forward input.");
+            if (ImGui::Button("Scan assemblies")) runScan(false);
+            ImGui::InputText("Class filter", filter, sizeof(filter));
+            if (ImGui::Button("Explore classes")) runScan(true);
+            ImGui::Separator();
+            ImGui::BeginChild("IL2CPP results", ImVec2(0, 250), true);
+            ImGui::TextUnformatted(inspection.c_str());
+            ImGui::EndChild();
             ImGui::TextWrapped("Standalone APK analysis remains available in the JEV application.");
         }
         ImGui::End();
