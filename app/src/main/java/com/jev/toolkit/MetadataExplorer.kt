@@ -20,13 +20,46 @@ object MetadataExplorer {
                                 val methodStart: Int, val methodCount: Int,
                                 val fieldStart: Int, val fieldCount: Int)
 
+    private fun fallbackStrings(
+        bytes: ByteArray, strings: Table, version: Int, filter: String, reason: String
+    ): String {
+        if (!strings.valid(bytes.size)) return "Metadata v$version: invalid string table"
+        val found = ArrayList<String>()
+        val needle = filter.trim()
+        val end = strings.offset + strings.size
+        var start = strings.offset
+        var cursor = start
+        while (cursor < end && found.size < 150) {
+            if (bytes[cursor].toInt() == 0) {
+                val len = cursor - start
+                if (len in 3..160) {
+                    val candidate = String(bytes, start, len, Charsets.UTF_8)
+                    if (candidate.all { it.isLetterOrDigit() || it in "._+<>/\u0060" } &&
+                        candidate.any { it.isLetter() } &&
+                        (needle.isEmpty() || candidate.contains(needle, true))) {
+                        found.add(candidate)
+                    }
+                }
+                start = cursor + 1
+            }
+            cursor++
+        }
+        return buildString {
+            appendLine("IL2CPP metadata v$version")
+            appendLine("Compatibility fallback: $reason")
+            appendLine("Showing raw metadata strings, NOT verified class/method/field definitions.")
+            found.forEach { appendLine(it) }
+            if (found.isEmpty()) appendLine("No matching readable strings")
+        }
+    }
+
     fun explore(bytes: ByteArray, filter: String = "", maxTypes: Int = 150): String {
         if (bytes.size < 200) return "Metadata is too short for type definitions"
         val b = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
         fun int(at: Int): Int = b.getInt(at)
         if (int(0) != 0xFAB11BAF.toInt()) return "Invalid IL2CPP metadata signature"
         val version = int(4)
-        if (version !in 24..29) return "Metadata v$version: detailed parsing not supported"
+        if (version !in 16..40) return "Unrecognized metadata version: $version"
         fun table(at: Int): Table = Table(int(at), int(at + 4))
         val strings = table(24)
         val methods = table(48)
@@ -35,7 +68,7 @@ object MetadataExplorer {
         if (listOf(strings, methods, fields, types).any { !it.valid(bytes.size) }) {
             return "Invalid metadata table bounds"
         }
-        if (types.size == 0) return "No type definitions found"
+        if (types.size == 0) return fallbackStrings(bytes, strings, version, filter, "No type definitions found")
         fun stringAt(index: Int): String? {
             if (index < 0 || index >= strings.size) return null
             val start = strings.offset + index
@@ -68,10 +101,13 @@ object MetadataExplorer {
             }
             return if (validNames >= n / 2) result else null
         }
-        val layouts = listOf(
-            Layout(100, 32, 12), Layout(104, 32, 12),
-            Layout(92, 32, 12), Layout(96, 32, 12)
-        )
+        val layouts = (88..128 step 4).flatMap { typeStride ->
+            listOf(28, 32, 36, 40, 44, 48, 52, 56).flatMap { methodStride ->
+                listOf(12, 16, 20, 24).map { fieldStride ->
+                    Layout(typeStride, methodStride, fieldStride)
+                }
+            }
+        }
         val selected = layouts.firstNotNullOfOrNull { layout ->
             val ts = readTypes(layout.typeStride) ?: return@firstNotNullOfOrNull null
             if (methods.size % layout.methodStride != 0 ||
@@ -83,7 +119,7 @@ object MetadataExplorer {
                 return@firstNotNullOfOrNull null
             }
             Pair(layout, ts)
-        } ?: return "Metadata v$version found, but its type layout is not recognized. No unsafe guesses made."
+        } ?: return fallbackStrings(bytes, strings, version, filter, "Type layout not recognized")
 
         val (layout, definitions) = selected
         val needle = filter.trim()
