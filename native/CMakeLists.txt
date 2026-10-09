@@ -14,6 +14,7 @@ if(JEV_WITH_IMGUI)
         jev_imgui.cpp
         jev_gl_surface.cpp
         jev_overlay.cpp
+        jev_unity_bridge.cpp
         "${IMGUI_DIR}/imgui.cpp"
         "${IMGUI_DIR}/imgui_draw.cpp"
         "${IMGUI_DIR}/imgui_tables.cpp"
