@@ -15,6 +15,7 @@ class JevPanel(private val context: Context) {
     private var panel: LinearLayout? = null
     private var button: Button? = null
     private var reportView: TextView? = null
+    private var filterView: EditText? = null
     /** Attach to your own Activity window using the Activity decor view instead of a system overlay. */
     fun attach(root: android.view.ViewGroup, openApkPicker: () -> Unit) {
         if (button != null) return
@@ -38,6 +39,7 @@ class JevPanel(private val context: Context) {
             }
         } }
         val filter = EditText(context).apply { hint = "Class / namespace / assembly filter"; setSingleLine(true) }
+        filterView = filter
         val explore = Button(context).apply { text = "Explore IL2CPP classes"; setOnClickListener {
             val query = filter.text.toString()
             report.text = "Scanning IL2CPP metadata..."
@@ -86,7 +88,7 @@ class JevPanel(private val context: Context) {
         report.text = "Analyzing selected APK..."
         thread(name = "jev-apk-analyzer") {
             val result = try {
-                ApkAnalyzer.inspect(context, uri)
+                ApkAnalyzer.inspect(context, uri, filterView?.text?.toString().orEmpty())
             } catch (t: Throwable) {
                 "APK analysis failed: ${t.message}"
             }
