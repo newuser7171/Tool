@@ -13,7 +13,7 @@ object ApkAnalyzer {
     private const val MAX_ENTRIES = 150000
     private const val MAGIC = 0xFAB11BAF.toInt()
 
-    fun inspect(context: Context, uri: Uri, filter: String = ""): String {
+    fun inspect(context: Context, uri: Uri, filter: String = "", onMetadata: ((ByteArray) -> Unit)? = null): String {
         var count = 0
         var unity = false
         var il2cpp = false
@@ -62,7 +62,11 @@ object ApkAnalyzer {
                                     buffer.write(chunk, 0, n)
                                 }
                                 if (oversized) "Too large to inspect safely"
-                                else analyzeMetadata(buffer.toByteArray()) + "\n" + MetadataExplorer.explore(buffer.toByteArray(), filter)
+                                else {
+                                    val data = buffer.toByteArray()
+                                    onMetadata?.invoke(data)
+                                    analyzeMetadata(data) + "\n" + MetadataExplorer.explore(data, filter)
+                                }
                             }
                             true
                         }
