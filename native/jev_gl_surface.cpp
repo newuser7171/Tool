@@ -6,6 +6,7 @@
 void drawJevImGuiPanel();
 static int width = 1, height = 1;
 static bool initialized = false;
+static float uiScale = 2.7f;
 static bool down = false;
 static float touchX = 0, touchY = 0;
 
@@ -15,6 +16,12 @@ extern "C" JNIEXPORT void JNICALL Java_com_jev_toolkit_MainActivity_nativeInit(J
     ImGui::CreateContext();
     ImGui::GetIO().DisplaySize = ImVec2((float)width, (float)height);
     ImGui::StyleColorsDark();
+    ImGui::GetStyle().ScaleAllSizes(uiScale);
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->Clear();
+    ImFontConfig config;
+    config.SizePixels = 13.0f * uiScale;
+    io.Fonts->AddFontDefault(&config);
     initialized = ImGui_ImplOpenGL3_Init("#version 300 es");
 }
 extern "C" JNIEXPORT void JNICALL Java_com_jev_toolkit_MainActivity_nativeResize(JNIEnv*, jobject, jint w, jint h) {
