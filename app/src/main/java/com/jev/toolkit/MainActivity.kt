@@ -1,6 +1,8 @@
 package com.jev.toolkit
 
 import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.view.MotionEvent
@@ -11,6 +13,7 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 class MainActivity : Activity() {
+    private val apkPickerRequest = 701
     private lateinit var surface: GLSurfaceView
     private lateinit var root: FrameLayout
     private val panel by lazy { JevPanel(this) }
@@ -35,8 +38,23 @@ class MainActivity : Activity() {
         root.addView(surface)
         val hint = TextView(this).apply { text = "JEV Toolkit • Tap JEV for native scan"; setTextColor(-1); gravity = Gravity.TOP }
         root.addView(hint)
-        panel.attach(root)
+        panel.attach(root) { openApkPicker() }
         setContentView(root)
+    }
+    private fun openApkPicker() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+        }
+        startActivityForResult(intent, apkPickerRequest)
+    }
+    @Deprecated("Legacy activity result for compatibility with API 26")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == apkPickerRequest && resultCode == RESULT_OK) {
+            val uri: Uri = data?.data ?: return
+            panel.analyzeApk(uri)
+        }
     }
     override fun onResume() { super.onResume(); surface.onResume() }
     override fun onPause() { surface.onPause(); super.onPause() }
