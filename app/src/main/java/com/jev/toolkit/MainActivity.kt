@@ -1,6 +1,9 @@
 package com.jev.toolkit
 
 import android.app.Activity
+import android.provider.Settings
+import android.widget.Button
+import android.widget.LinearLayout
 import android.content.Intent
 import android.net.Uri
 import android.opengl.GLSurfaceView
@@ -38,6 +41,33 @@ class MainActivity : Activity() {
         root.addView(surface)
         val hint = TextView(this).apply { text = "JEV Toolkit • Tap JEV for native scan"; setTextColor(-1); gravity = Gravity.TOP }
         root.addView(hint)
+        val overlayControls = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        val startOverlay = Button(this).apply {
+            text = "Floating JEV"
+            setOnClickListener {
+                if (!Settings.canDrawOverlays(this@MainActivity)) {
+                    startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:$packageName")))
+                } else {
+                    startService(Intent(this@MainActivity, FloatingOverlayService::class.java))
+                }
+            }
+        }
+        val stopOverlay = Button(this).apply {
+            text = "Stop overlay"
+            setOnClickListener {
+                stopService(Intent(this@MainActivity, FloatingOverlayService::class.java))
+            }
+        }
+        overlayControls.addView(startOverlay)
+        overlayControls.addView(stopOverlay)
+        root.addView(overlayControls, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        ))
         panel.attach(root) { openApkPicker() }
         setContentView(root)
     }
