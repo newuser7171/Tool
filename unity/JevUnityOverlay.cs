@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -14,6 +15,7 @@ public sealed class JevUnityOverlay : MonoBehaviour
 
     private IntPtr callback;
     private bool started;
+    private Coroutine frameLoop;
 
     private void Start()
     {
@@ -28,6 +30,7 @@ public sealed class JevUnityOverlay : MonoBehaviour
         jev_unity_set_screen(Screen.width, Screen.height);
         GL.IssuePluginEvent(callback, 1);
         started = true;
+        frameLoop = StartCoroutine(RenderAtEndOfFrame());
     }
 
     private void Update()
@@ -43,13 +46,19 @@ public sealed class JevUnityOverlay : MonoBehaviour
         else jev_unity_set_touch(-1f, -1f, false);
     }
 
-    private void OnPostRender()
+    private IEnumerator RenderAtEndOfFrame()
     {
-        if (started) GL.IssuePluginEvent(callback, 2);
+        var wait = new WaitForEndOfFrame();
+        while (started)
+        {
+            yield return wait;
+            if (started) GL.IssuePluginEvent(callback, 2);
+        }
     }
 
     private void OnDestroy()
     {
+        if (frameLoop != null) StopCoroutine(frameLoop);
         if (started) GL.IssuePluginEvent(callback, 3);
         started = false;
     }
