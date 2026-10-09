@@ -13,6 +13,7 @@ if(JEV_WITH_IMGUI)
     target_sources(jevtool PRIVATE
         jev_imgui.cpp
         jev_gl_surface.cpp
+        jev_overlay.cpp
         "${IMGUI_DIR}/imgui.cpp"
         "${IMGUI_DIR}/imgui_draw.cpp"
         "${IMGUI_DIR}/imgui_tables.cpp"
