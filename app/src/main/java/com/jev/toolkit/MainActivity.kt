@@ -16,7 +16,10 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 class MainActivity : Activity() {
-    companion object { const val ACTION_PICK_FOR_OVERLAY = "com.jev.toolkit.PICK_FOR_OVERLAY" }
+    companion object {
+        const val ACTION_PICK_FOR_OVERLAY = "com.jev.toolkit.PICK_FOR_OVERLAY"
+        init { System.loadLibrary("jevtool") }
+    }
     private var pickForOverlay = false
     private val apkPickerRequest = 701
     private lateinit var surface: GLSurfaceView
@@ -119,5 +122,4 @@ class MainActivity : Activity() {
     private external fun nativeResize(w: Int, h: Int)
     private external fun nativeTouch(x: Float, y: Float, down: Boolean)
     private external fun nativeFrame()
-    companion object { init { System.loadLibrary("jevtool") } }
 }
