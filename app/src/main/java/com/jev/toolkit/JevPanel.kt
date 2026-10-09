@@ -58,12 +58,28 @@ class JevPanel(private val context: Context) {
             val v = value.text.toString().toFloatOrNull()
             report.text = if(v != null && JevBridge.setFloat(key.text.toString(),v)) "Updated" else "Not registered or out of range"
         } }
-        pane.addView(apkButton); pane.addView(scan); pane.addView(filter); pane.addView(explore); pane.addView(list); pane.addView(key); pane.addView(value); pane.addView(apply); pane.addView(applyTyped)
-        val scroll = ScrollView(context).apply { addView(report) }
-        val density = context.resources.displayMetrics.density
+        val content = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(apkButton)
+            addView(scan)
+            addView(filter)
+            addView(explore)
+            addView(list)
+            addView(key)
+            addView(value)
+            addView(apply)
+            addView(applyTyped)
+            addView(report)
+        }
+        val scroll = ScrollView(context).apply {
+            isFillViewport = false
+            addView(content)
+        }
         pane.addView(scroll, LinearLayout.LayoutParams(
-            (300 * density).toInt(), (260 * density).toInt()
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
         ))
+        val density = context.resources.displayMetrics.density
         toggle.setOnClickListener { pane.visibility = if(pane.visibility == android.view.View.VISIBLE) android.view.View.GONE else android.view.View.VISIBLE }
         val buttonParams = android.widget.FrameLayout.LayoutParams(
             (88 * density).toInt(), (52 * density).toInt(),
@@ -72,12 +88,13 @@ class JevPanel(private val context: Context) {
             topMargin = (16 * density).toInt()
             marginEnd = (12 * density).toInt()
         }
+        val screen = context.resources.displayMetrics
         val panelParams = android.widget.FrameLayout.LayoutParams(
-            (320 * density).toInt(), android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
-            android.view.Gravity.TOP or android.view.Gravity.END
+            screen.widthPixels - (16 * density).toInt(),
+            screen.heightPixels - (176 * density).toInt(),
+            android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL
         ).apply {
             topMargin = (76 * density).toInt()
-            marginEnd = (12 * density).toInt()
         }
         root.addView(toggle, buttonParams)
         root.addView(pane, panelParams)
