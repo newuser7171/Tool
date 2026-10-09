@@ -57,8 +57,22 @@ class JevPanel(private val context: Context) {
             (300 * density).toInt(), (260 * density).toInt()
         ))
         toggle.setOnClickListener { pane.visibility = if(pane.visibility == android.view.View.VISIBLE) android.view.View.GONE else android.view.View.VISIBLE }
-        root.addView(toggle)
-        root.addView(pane)
+        val buttonParams = android.widget.FrameLayout.LayoutParams(
+            (88 * density).toInt(), (52 * density).toInt(),
+            android.view.Gravity.TOP or android.view.Gravity.END
+        ).apply {
+            topMargin = (16 * density).toInt()
+            marginEnd = (12 * density).toInt()
+        }
+        val panelParams = android.widget.FrameLayout.LayoutParams(
+            (320 * density).toInt(), android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+            android.view.Gravity.TOP or android.view.Gravity.END
+        ).apply {
+            topMargin = (76 * density).toInt()
+            marginEnd = (12 * density).toInt()
+        }
+        root.addView(toggle, buttonParams)
+        root.addView(pane, panelParams)
         button=toggle; panel=pane
     }
     fun detach(root: android.view.ViewGroup) {
