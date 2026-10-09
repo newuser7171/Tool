@@ -276,3 +276,20 @@ Java_com_jev_toolkit_JevBridge_setTyped(JNIEnv* env, jclass, jstring key, jstrin
     env->ReleaseStringUTFChars(key, k);
     return ok ? JNI_TRUE : JNI_FALSE;
 }
+
+extern "C" size_t jev_inspect_loaded_assemblies(char* output, size_t capacity) {
+    const std::string report = jev::inspect();
+    if (!output || capacity == 0) return report.size();
+    const size_t n = std::min(report.size(), capacity - 1);
+    std::memcpy(output, report.data(), n);
+    output[n] = '\0';
+    return report.size();
+}
+extern "C" size_t jev_explore_loaded_classes(const char* filter, char* output, size_t capacity) {
+    const std::string report = jev::explore(filter ? filter : "");
+    if (!output || capacity == 0) return report.size();
+    const size_t n = std::min(report.size(), capacity - 1);
+    std::memcpy(output, report.data(), n);
+    output[n] = '\0';
+    return report.size();
+}
