@@ -14,8 +14,9 @@ import kotlin.concurrent.thread
 class JevPanel(private val context: Context) {
     private var panel: LinearLayout? = null
     private var button: Button? = null
+    private var reportView: TextView? = null
     /** Attach to your own Activity window using the Activity decor view instead of a system overlay. */
-    fun attach(root: android.view.ViewGroup) {
+    fun attach(root: android.view.ViewGroup, openApkPicker: () -> Unit) {
         if (button != null) return
         val toggle = Button(context).apply { text = "JEV" }
         val pane = LinearLayout(context).apply {
@@ -24,6 +25,11 @@ class JevPanel(private val context: Context) {
             visibility = android.view.View.GONE
         }
         val report = TextView(context).apply { setTextColor(-1); text = "Press Scan to inspect IL2CPP" }
+        reportView = report
+        val apkButton = Button(context).apply {
+            text = "ANALYZE APK FILE"
+            setOnClickListener { openApkPicker() }
+        }
         val scan = Button(context).apply { text = "Scan assemblies"; setOnClickListener {
             report.text = "Inspecting..."
             thread(name = "jev-assembly-scan") {
@@ -50,7 +56,7 @@ class JevPanel(private val context: Context) {
             val v = value.text.toString().toFloatOrNull()
             report.text = if(v != null && JevBridge.setFloat(key.text.toString(),v)) "Updated" else "Not registered or out of range"
         } }
-        pane.addView(scan); pane.addView(filter); pane.addView(explore); pane.addView(list); pane.addView(key); pane.addView(value); pane.addView(apply); pane.addView(applyTyped)
+        pane.addView(apkButton); pane.addView(scan); pane.addView(filter); pane.addView(explore); pane.addView(list); pane.addView(key); pane.addView(value); pane.addView(apply); pane.addView(applyTyped)
         val scroll = ScrollView(context).apply { addView(report) }
         val density = context.resources.displayMetrics.density
         pane.addView(scroll, LinearLayout.LayoutParams(
@@ -74,6 +80,18 @@ class JevPanel(private val context: Context) {
         root.addView(toggle, buttonParams)
         root.addView(pane, panelParams)
         button=toggle; panel=pane
+    }
+    fun analyzeApk(uri: android.net.Uri) {
+        val report = reportView ?: return
+        report.text = "Analyzing selected APK..."
+        thread(name = "jev-apk-analyzer") {
+            val result = try {
+                ApkAnalyzer.inspect(context, uri)
+            } catch (t: Throwable) {
+                "APK analysis failed: ${t.message}"
+            }
+            Handler(Looper.getMainLooper()).post { report.text = result }
+        }
     }
     fun detach(root: android.view.ViewGroup) {
         button?.let { root.removeView(it) }; panel?.let { root.removeView(it) }
