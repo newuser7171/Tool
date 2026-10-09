@@ -73,6 +73,16 @@ class JevPanel(private val context: Context) {
             setTextIsSelectable(true)
         }
         report = output
+        offline.addView(button("SHARE REPORT (TEXT)") {
+            if (lastReport.isNotBlank()) {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_SUBJECT, "JEV Offline APK Report")
+                    putExtra(Intent.EXTRA_TEXT, lastReport)
+                }
+                context.startActivity(Intent.createChooser(intent, "Export JEV report"))
+            } else Toast.makeText(context, "Analyze an APK first", Toast.LENGTH_SHORT).show()
+        })
         offline.addView(button("SHOW / HIDE APK REPORT") {
             expanded = !expanded
             output.visibility = if (expanded) View.VISIBLE else View.GONE
