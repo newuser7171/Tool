@@ -90,7 +90,7 @@ object MetadataExplorer {
                 val name = stringAt(int(base)) ?: return null
                 val ns = stringAt(int(base + 4)) ?: return null
                 val fieldStart = int(base + 56)
-                val methodStart = int(base + 60)
+                val methodStart = int(base + 36)
                 val methodCount = b.getShort(base + 78).toInt() and 0xffff
                 val fieldCount = b.getShort(base + 74).toInt() and 0xffff
                 if (fieldStart < -1 || methodStart < -1 ||
