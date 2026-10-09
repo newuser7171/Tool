@@ -89,11 +89,13 @@ object MetadataExplorer {
                 val base = types.offset + i * stride
                 val name = stringAt(int(base)) ?: return null
                 val ns = stringAt(int(base + 4)) ?: return null
-                val fieldStart = int(base + 40)
-                val methodStart = int(base + 44)
-                val methodCount = b.getShort(base + 72).toInt() and 0xffff
-                val fieldCount = b.getShort(base + 76).toInt() and 0xffff
-                if (fieldStart < 0 || methodStart < 0 ||
+                val fieldStart = int(base + 56)
+                val methodStart = int(base + 60)
+                val methodCount = b.getShort(base + 78).toInt() and 0xffff
+                val fieldCount = b.getShort(base + 74).toInt() and 0xffff
+                if (fieldStart < -1 || methodStart < -1 ||
+                    (fieldStart == -1 && fieldCount != 0) ||
+                    (methodStart == -1 && methodCount != 0) ||
                     fieldStart.toLong() + fieldCount > 10000000L ||
                     methodStart.toLong() + methodCount > 10000000L) return null
                 if (name.isNotBlank()) validNames++
@@ -102,7 +104,7 @@ object MetadataExplorer {
             return if (validNames >= n / 2) result else null
         }
         val layouts = (88..128 step 4).flatMap { typeStride ->
-            listOf(28, 32, 36, 40, 44, 48, 52, 56).flatMap { methodStride ->
+            listOf(36, 32, 28, 40, 44, 48, 52, 56).flatMap { methodStride ->
                 listOf(12, 16, 20, 24).map { fieldStride ->
                     Layout(typeStride, methodStride, fieldStride)
                 }
@@ -146,7 +148,7 @@ object MetadataExplorer {
                 for (i in 0 until minOf(type.methodCount, 80)) {
                     val base = methods.offset + (type.methodStart + i) * layout.methodStride
                     val name = stringAt(int(base)) ?: "<unknown>"
-                    val params = b.getShort(base + 30).toInt() and 0xffff
+                    val params = b.getShort(base + 34).toInt() and 0xffff
                     appendLine("  method $name (parameter count: $params)")
                 }
                 if (type.methodCount > 80) appendLine("  ... more methods")
