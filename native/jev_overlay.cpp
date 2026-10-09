@@ -23,7 +23,7 @@ void runScan(bool classes) {
     const size_t needed = classes ? jev_explore_loaded_classes(filter, buffer.data(), buffer.size())
                                   : jev_inspect_loaded_assemblies(buffer.data(), buffer.size());
     inspection.assign(buffer.data());
-    if (needed >= maxBytes) inspection += "\\n[Results truncated]";
+    if (needed >= maxBytes) inspection += "\n[Results truncated]";
 }
 
 }
@@ -85,6 +85,11 @@ extern "C" void jev_overlay_frame(float delta_seconds) {
     }
     ImGui::Render();
     GLint oldProgram=0, oldVAO=0, oldFBO=0, oldViewport[4]={};
+    GLint oldActiveTexture=0, oldTexture=0, oldArrayBuffer=0;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &oldActiveTexture);
+    glActiveTexture(GL_TEXTURE0);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &oldTexture);
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &oldArrayBuffer);
     GLboolean oldBlend=glIsEnabled(GL_BLEND), oldDepth=glIsEnabled(GL_DEPTH_TEST);
     GLboolean oldScissor=glIsEnabled(GL_SCISSOR_TEST), oldCull=glIsEnabled(GL_CULL_FACE);
     glGetIntegerv(GL_CURRENT_PROGRAM, &oldProgram);
@@ -93,6 +98,9 @@ extern "C" void jev_overlay_frame(float delta_seconds) {
     glGetIntegerv(GL_VIEWPORT, oldViewport);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glUseProgram((GLuint)oldProgram);
+    glBindBuffer(GL_ARRAY_BUFFER, (GLuint)oldArrayBuffer);
+    glBindTexture(GL_TEXTURE_2D, (GLuint)oldTexture);
+    glActiveTexture((GLenum)oldActiveTexture);
     glBindVertexArray((GLuint)oldVAO);
     glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)oldFBO);
     glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
