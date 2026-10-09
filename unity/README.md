@@ -9,10 +9,10 @@ and does not require root. It is not a generic binary APK injector.
 2. Copy libjevtool.so to Assets/Plugins/Android/arm64-v8a/ in the Unity project.
 3. Copy unity/JevUnityOverlay.cs into Assets/Scripts/.
 4. Select OpenGL ES 3 (disable Vulkan) in Android Player graphics settings.
-5. Attach JevUnityOverlay to the **camera that renders the final game frame**.
+5. Attach JevUnityOverlay to an active persistent GameObject in the scene.
 6. Build and install the Unity game. Tap the JEV launcher during gameplay.
 
-The component uses GL.IssuePluginEvent for render-thread callbacks. The plugin
+The component schedules GL.IssuePluginEvent after WaitForEndOfFrame; this is not guaranteed to render above every Unity graphics pipeline. The plugin
 initializes lazily and can display live IL2CPP assembly/class information once
 the IL2CPP runtime is initialized.
 
